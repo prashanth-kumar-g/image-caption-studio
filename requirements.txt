@@ -1,7 +1,6 @@
-streamlit
-torch
-transformers
-accelerate
-bitsandbytes
-Pillow
-qwen-vl-utils
+streamlit==1.28.0
+torch==2.1.0
+transformers==4.35.0
+accelerate==0.24.1
+bitsandbytes==0.41.2
+Pillow==10.1.0
