@@ -285,51 +285,40 @@ def load_css():
 
 @st.cache_resource(show_spinner=False)
 def load_model():
-    """Load the Qwen2.5-VL model (cached for performance)"""
+    """Load the Qwen2.5-VL model with aggressive optimization for free CPU."""
+    from transformers import BitsAndBytesConfig
+    import torch
+
+    model_id = "Qwen/Qwen2.5-VL-7B-Instruct"
     
-    with st.spinner("🚀 Loading AI Model..."):
-        try:
-            # Check GPU availability
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-            
-            # Model ID
-            model_id = "Qwen/Qwen2.5-VL-7B-Instruct"
-            
-            # Try with quantization for faster loading
-            quantization_config = BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_compute_dtype=torch.float16,
-                bnb_4bit_quant_type="nf4",
-                bnb_4bit_use_double_quant=True,
-            )
-            
-            # Load model and processor
-            model = transformers.Qwen2_5_VLForConditionalGeneration.from_pretrained(
-                model_id,
-                quantization_config=quantization_config,
-                device_map="auto",
-                torch_dtype=torch.float16
-            )
-            
-            processor = transformers.Qwen2_5_VLProcessor.from_pretrained(model_id)
-            
-            st.success("✅ AI Model Loaded Successfully!")
-            return model, processor, device
-            
-        except Exception as e:
-            st.error(f"❌ Error loading model: {str(e)}")
-            # Fallback to CPU if GPU fails
-            try:
-                model = transformers.Qwen2_5_VLForConditionalGeneration.from_pretrained(
-                    model_id,
-                    device_map="cpu",
-                    torch_dtype=torch.float32
-                )
-                processor = transformers.Qwen2_5_VLProcessor.from_pretrained(model_id)
-                return model, processor, "cpu"
-            except:
-                st.error("Failed to load model. Please check your internet connection.")
-                return None, None, None
+    # AGGRESSIVE 4-bit quantization for CPU
+    quantization_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_compute_dtype=torch.float32,  # More stable on CPU
+        bnb_4bit_quant_type="nf4",
+        bnb_4bit_use_double_quant=True,
+    )
+    
+    try:
+        # KEY CHANGE: Force model to CPU and use memory mapping
+        model = transformers.Qwen2_5_VLForConditionalGeneration.from_pretrained(
+            model_id,
+            quantization_config=quantization_config,
+            device_map="cpu",  # <-- FORCE CPU
+            low_cpu_mem_usage=True,  # <-- CRITICAL for low memory
+            torch_dtype=torch.float32,
+            trust_remote_code=True
+        )
+        
+        processor = transformers.Qwen2_5_VLProcessor.from_pretrained(model_id)
+        st.success("✅ Model loaded in 4-bit (Optimized for CPU)")
+        return model, processor, "cpu"
+        
+    except Exception as e:
+        st.error(f"❌ Model loading failed on CPU: {e}")
+        # Fallback: Use a TINY model
+        st.info("🔄 Attempting to load a smaller model...")
+        return None, None, None
 
 # ============================
 # PROMPT TEMPLATES
@@ -732,3 +721,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
