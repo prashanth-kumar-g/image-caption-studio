@@ -224,7 +224,7 @@ if 'initialized' not in st.session_state:
 def get_backend_from_tracker():
     """Ask tracker service for current Colab URL"""
     try:
-        response = requests.get(f"{TRACKER_URL}/url", timeout=10)
+        response = requests.get(f"{TRACKER_URL}/url", timeout=25)
         
         if response.status_code == 200:
             data = response.json()
@@ -249,7 +249,7 @@ def get_backend_from_tracker():
 def test_backend_connection(url):
     """Test if the backend is responding"""
     try:
-        response = requests.get(f"{url}/health", timeout=10)
+        response = requests.get(f"{url}/health", timeout=25)
         return response.status_code == 200
     except:
         return False
@@ -276,7 +276,7 @@ def generate_captions_from_api(image: Image.Image, styles: list, word_limits: di
         response = requests.post(
             f"{st.session_state.backend_url}/generate-captions",
             json=payload,
-            timeout=120
+            timeout=None
         )
         
         if response.status_code == 200:
@@ -578,3 +578,4 @@ if st.session_state.backend_status == "checking":
                 st.session_state.backend_status = "disconnected"
         else:
             st.session_state.backend_status = "disconnected"
+
