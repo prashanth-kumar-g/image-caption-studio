@@ -433,7 +433,7 @@ with right:
     style = st.radio(" ", ["All", "Short", "Technical", "Human-friendly"], 
                      label_visibility="collapsed")
     
-    with st.expander("Advanced Options", expanded=False):
+    with st.expander("Advanced Options", expanded=True):
         short_words = st.slider("Short caption words", 5, 30, 15)
         tech_words = st.slider("Technical caption words", 10, 60, 35)
         human_words = st.slider("Human-friendly caption words", 10, 50, 25)
@@ -578,4 +578,5 @@ if st.session_state.backend_status == "checking":
                 st.session_state.backend_status = "disconnected"
         else:
             st.session_state.backend_status = "disconnected"
+
 
