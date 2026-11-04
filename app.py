@@ -578,5 +578,3 @@ if st.session_state.backend_status == "checking":
                 st.session_state.backend_status = "disconnected"
         else:
             st.session_state.backend_status = "disconnected"
-
-
