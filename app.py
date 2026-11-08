@@ -175,8 +175,15 @@ body { background:#0e1117; }
   color:#777;
   font-size:14px;
   margin-top:80px;
-  padding:20px;
+  /* Changed padding: 20px to have only 5px at the bottom */
+  padding: 30px 30px 30px 30px; 
   border-top:1px solid #30363d;
+}
+
+/* Controls top and bottom page spacing */
+.block-container {
+    padding-top: 0rem !important;    /* 👈 CHANGE THIS NUMBER to test */
+    padding-bottom: 1rem !important;
 }
 
 /* New styles for auto-find system */
@@ -362,7 +369,6 @@ left, right = st.columns(2, gap="large")
 
 # ---------------- LEFT: IMAGE (EXACT ORIGINAL - UNCHANGED) ----------------
 with left:
-    st.markdown('<div class="panel">', unsafe_allow_html=True)
     st.markdown("<h3>Upload Image</h3>", unsafe_allow_html=True)
     
     # FIRST: Display image or placeholder
@@ -423,11 +429,9 @@ with left:
                 st.session_state.uploaded_image = None
                 st.session_state.image_html = None
     
-    st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------- RIGHT: OPTIONS (EXACT ORIGINAL - UNCHANGED) ----------------
 with right:
-    st.markdown('<div class="panel">', unsafe_allow_html=True)
     st.markdown("<h3>Caption Style</h3>", unsafe_allow_html=True)
     
     style = st.radio(" ", ["All", "Short", "Technical", "Human-friendly"], 
@@ -443,7 +447,6 @@ with right:
     generate_clicked = st.button("Generate Captions", type="primary", use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
     
-    st.markdown('</div>', unsafe_allow_html=True)
 
 # Handle generate button click
 if generate_clicked:
@@ -544,12 +547,20 @@ if st.session_state.get("captions_generated", False) and st.session_state.genera
             """, unsafe_allow_html=True)
     
     # Add a refresh/regenerate option
-    col1, col2, col3 = st.columns([1, 2, 1])
+    col1, col2, col3 = st.columns([2, 1.5, 2])
     with col2:
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("🔄 Generate New Captions", type="secondary", use_container_width=True):
+        if st.button("️🔄 Clear", type="secondary", use_container_width=True):
+            # Clear generated captions
             st.session_state.captions_generated = False
             st.session_state.generated_captions = {}
+            
+            # Clear the uploaded image and its preview
+            st.session_state.uploaded_image = None
+            st.session_state.image_html = None
+            if 'last_uploaded_file' in st.session_state:
+                del st.session_state['last_uploaded_file']
+                
             st.rerun()
 
 elif st.session_state.get("uploaded_image"):
@@ -564,7 +575,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 # ---------------- FOOTER (EXACT ORIGINAL - UNCHANGED) ----------------
 st.markdown("""
 <div class="footer">
-    Built for academic & demonstration purposes • Uses Qwen2.5-VL-7B-Instruct
+    © 2025 Image Caption Studio • Powered by Qwen2.5-VL-7B-Instruct
 </div>
 """, unsafe_allow_html=True)
 
