@@ -70,7 +70,7 @@ class CaptionModel:
             model_id, 
             use_fast=False, 
             trust_remote_code=True,
-            max_pixels=2048 * 28 * 28  # Backend Safety Net for OOM
+            max_pixels=2048 * 28 * 28
         )
         print("✅ Model loaded successfully!")
 
@@ -194,7 +194,7 @@ Output only the revised caption. Do not explain your reasoning."""
                             word_count = polished_word_count
                             print(f"✅ Pass 3 improved to {word_count} words.")
 
-                    # === UPDATE 3: Programmatic Cleanup for Emojis and Hashtags ===
+                    # === Programmatic Cleanup for Emojis and Hashtags ===
                     caption = re.sub(r'#\w+', '', caption)
                     caption = ''.join(c for c in caption if c.isascii())
                     caption = ' '.join(caption.split())
@@ -215,6 +215,12 @@ Output only the revised caption. Do not explain your reasoning."""
                             
                         word_count = len(caption.split())
                         print(f"🔨 Hard truncated {caption_type} to {word_count} words.")
+
+                    # === NEW UPDATE: Remove dangling conjunctions at the very end ===
+                    # This fixes the rare issue of a sentence ending in "and." or "or."
+                    caption = re.sub(r'\s+(and|or|but|with|in|on|at|to|by|of)\.?$', '.', caption, flags=re.IGNORECASE)
+                    caption = re.sub(r'\s+\.', '.', caption) # Clean up any spaces before the period
+                    word_count = len(caption.split())
                     
                     results[caption_type] = {
                         'caption': caption,
