@@ -13,7 +13,7 @@ import requests                               # For making HTTP requests to the 
 st.set_page_config(
     page_title="Image Caption Studio",        # Browser tab title
     page_icon="🖼️",                           # Browser tab icon
-    layout="wide"                             # Uses full screen width
+    layout="wide"                            # Uses full screen width
 )
 
 # ===================== SECURE CONFIGURATION =====================
@@ -23,7 +23,7 @@ st.set_page_config(
 try:
     MODAL_API_URL = st.secrets["MODAL_API_URL"]      # Retrieve secret from Streamlit
 except (FileNotFoundError, KeyError):                # Catch missing secrets file or key
-    MODAL_API_URL = "https://your-modal-url-here.modal.run" # Placeholder fallback URL
+    MODAL_API_URL = "https://your-modal-url-here.modal.run"   # Placeholder fallback URL
     st.warning("⚠️ Developer Note: `MODAL_API_URL` secret is not configured. The backend will not respond.")
 
 # ===================== CUSTOM CSS STYLING =====================
@@ -131,13 +131,13 @@ body {
   margin-bottom: 25px;                        /* Space between cards */
   border-left: 5px solid #6366f1;             /* Colored left accent border */
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);  /* Drop shadow for depth */
-  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smooth animation */
+  transition: transform 0.3s ease, box-shadow 0.3s ease;  /* Smooth animation */
 }
 
 /* Hover effect for interactivity */
 .output-card:hover { 
-    transform: translateY(-5px);              /* Lifts card up slightly */
-    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.4); /* Deeper shadow */
+    transform: translateY(-5px);                  /* Lifts card up slightly */
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.4);   /* Deeper shadow */
 }
 
 /* Header inside each card (Icon + Title) */
@@ -171,11 +171,11 @@ body {
 
 /* Specific border colors for different caption types */
 .card-short { border-left-color: #06b6d4; } 
-.card-short .card-icon { color: #06b6d4; }    /* Cyan accent for short */
+.card-short .card-icon { color: #06b6d4; }       /* Cyan accent for short */
 .card-technical { border-left-color: #10b981; } 
-.card-technical .card-icon { color: #10b981; }/* Green accent for technical */
+.card-technical .card-icon { color: #10b981; }   /* Green accent for technical */
 .card-friendly { border-left-color: #f59e0b; } 
-.card-friendly .card-icon { color: #f59e0b; } /* Yellow accent for friendly */
+.card-friendly .card-icon { color: #f59e0b; }    /* Yellow accent for friendly */
 
 /* ===================== EMPTY STATE STYLING ===================== */
 /* Placeholder text when no captions are generated */
@@ -213,8 +213,8 @@ body {
 
 st.markdown("""
 <div class="header">
-  <h1>🖼️ Image Caption Studio</h1> <!-- Main app title -->
-  <p>Upload an image and generate Short, Technical, or Human-friendly captions using Generative AI.</p> <!-- Subtitle -->
+  <h1>🖼️ Image Caption Studio</h1>    <!-- Main app title -->
+  <p>Upload an image and generate Short, Technical, or Human-friendly captions using Generative AI.</p>   <!-- Subtitle -->
 </div>
 """, unsafe_allow_html=True)
 
@@ -240,9 +240,9 @@ def generate_captions_from_api(image: Image.Image, styles: list, word_limits: di
         image.save(buffered, format="PNG")           # Save as PNG first to check size
         if buffered.tell() > 2 * 1024 * 1024:        # If size > 2MB
             buffered = BytesIO()                     # Reset buffer
-            image.save(buffered, format="JPEG", quality=85) # Compress to JPEG
+            image.save(buffered, format="JPEG", quality=85)   # Compress to JPEG
             
-        img_str = base64.b64encode(buffered.getvalue()).decode() # Encode to base64 string
+        img_str = base64.b64encode(buffered.getvalue()).decode()   # Encode to base64 string
         
         # Construct payload with dynamic constraints
         payload = {
@@ -269,15 +269,15 @@ def generate_captions_from_api(image: Image.Image, styles: list, word_limits: di
 
 with st.sidebar:
     st.markdown("### 📡 Backend Status")              # Sidebar title
-    st.success("🟢 Connected to Modal Serverless GPU (Free Tier)") # Status message
+    st.success("🟢 Connected to Modal Serverless GPU (Free Tier)")   # Status message
     st.markdown("---")                               # Horizontal divider
     st.markdown("**Model:** Qwen2.5-VL-7B-Instruct") # Model info
     st.markdown("**Platform:** Modal")               # Platform info
     st.markdown("**Hardware:** A10G GPU")            # Hardware info
-    st.info("The first request may take up to 30-90 seconds to cold-start. Subsequent requests will take 5-15 seconds to respond.") # Cold start info
+    st.info("The first request may take up to 30-90 seconds to cold-start. Subsequent requests will take 5-15 seconds to respond.")   # Cold start info
     st.markdown("---")                               # Horizontal divider
     st.markdown("**Note:**")                         # Note header
-    st.error("The server automatically goes to sleep after 10 minutes of inactivity to save GPU credits.") # Sleep info
+    st.error("The server automatically goes to sleep after 10 minutes of inactivity to save GPU credits.")   # Sleep info
 
 # ===================== MAIN UI LAYOUT =====================
 # Splits the screen into two columns: Image Upload & Configuration
@@ -286,13 +286,13 @@ left, right = st.columns(2, gap="large")             # Create two columns
 
 # -------------------- LEFT COLUMN: IMAGE UPLOAD --------------------
 with left:
-    st.markdown("<h3>Upload Image</h3>", unsafe_allow_html=True) # Column title
+    st.markdown("<h3>Upload Image</h3>", unsafe_allow_html=True)   # Column title
     
     # Display image or placeholder based on state
     if st.session_state.image_html:
-        st.markdown(st.session_state.image_html, unsafe_allow_html=True) # Render image HTML
+        st.markdown(st.session_state.image_html, unsafe_allow_html=True)   # Render image HTML
     else:
-        st.markdown('<div class="image-box-container"><div class="image-placeholder">📷 No image selected</div></div>', unsafe_allow_html=True) # Render placeholder
+        st.markdown('<div class="image-box-container"><div class="image-placeholder">📷 No image selected</div></div>', unsafe_allow_html=True)  # Render placeholder
     
     # File uploader widget
     uploaded_file = st.file_uploader("Choose an image file", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
@@ -300,7 +300,7 @@ with left:
     if uploaded_file is not None:
         # 20MB Hard Limit Check to prevent server overload
         if uploaded_file.size > 20 * 1024 * 1024:
-            st.error("❌ File is too large. Maximum size is 20MB.") # Show error
+            st.error("❌ File is too large. Maximum size is 20MB.")   # Show error
             st.session_state.api_image = None        # Clear backend image
             st.session_state.image_html = None       # Clear UI image
         else:
@@ -308,15 +308,15 @@ with left:
             if 'last_uploaded_file' not in st.session_state or st.session_state.last_uploaded_file != uploaded_file.name:
                 try:
                     image = Image.open(uploaded_file)    # Open image using PIL
-                    st.session_state.uploaded_image = image # Store original
+                    st.session_state.uploaded_image = image   # Store original
                     
                     # 1. UI DISPLAY (EXACT SAME AS BEFORE - UNTOUCHED)
-                    resized_image = image.resize((600, 450), Image.Resampling.LANCZOS) # Resize for UI box
+                    resized_image = image.resize((600, 450), Image.Resampling.LANCZOS)   # Resize for UI box
                     buffered = BytesIO()                 # Buffer for UI image
-                    resized_image.save(buffered, format="PNG", optimize=True, quality=95) # Save UI image
+                    resized_image.save(buffered, format="PNG", optimize=True, quality=95)  # Save UI image
                     img_str = base64.b64encode(buffered.getvalue()).decode() # Encode UI image
-                    image_html = f'<div class="image-box-container"><img src="data:image/png;base64,{img_str}" alt="Uploaded Image" /></div>' # Create HTML
-                    st.session_state.image_html = image_html # Store HTML
+                    image_html = f'<div class="image-box-container"><img src="data:image/png;base64,{img_str}" alt="Uploaded Image" /></div>'   # Create HTML
+                    st.session_state.image_html = image_html   # Store HTML
                     
                     # 2. BACKEND PREPARATION (CONDITIONAL RESIZING)
                     api_image = image.copy()             # Copy for backend
@@ -324,29 +324,29 @@ with left:
                     # Scale down proportionally if dimension > 2048
                     if width > 2048 or height > 2048:
                         ratio = 2048 / max(width, height) # Calculate aspect ratio
-                        new_size = (int(width * ratio), int(height * ratio)) # New dimensions
-                        api_image = api_image.resize(new_size, Image.Resampling.LANCZOS) # Resize
+                        new_size = (int(width * ratio), int(height * ratio))   # New dimensions
+                        api_image = api_image.resize(new_size, Image.Resampling.LANCZOS)   # Resize
                     
-                    st.session_state.api_image = api_image # Store backend image
-                    st.session_state.last_uploaded_file = uploaded_file.name # Track file
-                    st.session_state.captions_generated = False # Reset generation flag
-                    st.session_state.generated_captions = {} # Clear old captions
-                    st.rerun()                           # Force UI update
-                except Exception as e:                   # Handle image loading errors
-                    st.error(f"Error loading image: {e}") # Show error
+                    st.session_state.api_image = api_image   # Store backend image
+                    st.session_state.last_uploaded_file = uploaded_file.name   # Track file
+                    st.session_state.captions_generated = False   # Reset generation flag
+                    st.session_state.generated_captions = {}   # Clear old captions
+                    st.rerun()                              # Force UI update
+                except Exception as e:                     # Handle image loading errors
+                    st.error(f"Error loading image: {e}")   # Show error
 
 # -------------------- RIGHT COLUMN: OPTIONS --------------------
 with right:
-    st.markdown("<h3>Caption Style</h3>", unsafe_allow_html=True) # Column title
+    st.markdown("<h3>Caption Style</h3>", unsafe_allow_html=True)   # Column title
     
     # Radio buttons for selecting caption type
     style = st.radio(" ", ["All", "Short", "Technical", "Human-friendly"], label_visibility="collapsed")
     
     # Collapsible section for word limit adjustments
     with st.expander("Advanced Options", expanded=True):
-        short_words = st.slider("Short caption words", 5, 30, 15)          # Slider for short limit
-        tech_words = st.slider("Technical caption words", 15, 60, 35)      # Slider for technical limit
-        human_words = st.slider("Human-friendly caption words", 10, 50, 25)# Slider for friendly limit
+        short_words = st.slider("Short caption words", 5, 30, 15)            # Slider for short limit
+        tech_words = st.slider("Technical caption words", 15, 60, 35)        # Slider for technical limit
+        human_words = st.slider("Human-friendly caption words", 10, 50, 25)  # Slider for friendly limit
     
     # Generate Button
     st.markdown('<div class="generate-button-container">', unsafe_allow_html=True)
@@ -357,22 +357,22 @@ with right:
 # Triggers API call when the button is clicked
 
 if generate_clicked:
-    if not st.session_state.get("api_image"):        # Check if image exists
-        st.warning("⚠️ Please upload an image first!") # Show warning
+    if not st.session_state.get("api_image"):           # Check if image exists
+        st.warning("⚠️ Please upload an image first!")  # Show warning
     else:
         # Map UI selections to API payload values
         styles = ["all"] if style == "All" else [{"Short": "short", "Technical": "technical", "Human-friendly": "human-friendly"}[style]]
         word_limits = {"short": short_words, "technical": tech_words, "human-friendly": human_words}
         
         with st.spinner("🔄 Generating captions on Modal GPU... Please wait."):
-            result = generate_captions_from_api(st.session_state.api_image, styles, word_limits) # API Call
+            result = generate_captions_from_api(st.session_state.api_image, styles, word_limits)   # API Call
             
             if result.get('success'):                # If successful
-                st.session_state.captions_generated = True # Set flag
-                st.session_state.generated_captions = result.get('captions', {}) # Store results
+                st.session_state.captions_generated = True   # Set flag
+                st.session_state.generated_captions = result.get('captions', {})   # Store results
                 st.rerun()                           # Refresh UI
             else:                                    # If failed
-                st.error(f"❌ Error: {result.get('error', 'Unknown error')}") # Show error
+                st.error(f"❌ Error: {result.get('error', 'Unknown error')}")   # Show error
 
 # ===================== OUTPUT SECTION =====================
 # Renders the generated captions onto the screen
@@ -392,26 +392,26 @@ if st.session_state.get("captions_generated", False) and st.session_state.genera
     st.markdown('<div class="output-title">✨ Generated Captions</div>', unsafe_allow_html=True)
     
     # Loop through generated types and display them
-    for caption_type in ["short", "technical", "human-friendly"]:  # Iterate over all possible caption types
-        if caption_type in st.session_state.generated_captions:    # Check if this type was generated
-            data = st.session_state.generated_captions[caption_type] # Get specific data
-            info = caption_display[caption_type]                     # Get UI info
+    for caption_type in ["short", "technical", "human-friendly"]:   # Iterate over all possible caption types
+        if caption_type in st.session_state.generated_captions:     # Check if this type was generated
+            data = st.session_state.generated_captions[caption_type]   # Get specific data
+            info = caption_display[caption_type]                       # Get UI info
             
             # Render HTML for the card
             st.markdown(f"""
             <div class="output-card {info['class']}">        <!-- Main card container -->
                 <div class="card-header">                    <!-- Card header section -->
-                    <span class="card-icon">{info['icon']}</span> <!-- Caption type icon -->
-                    <h3 class="card-title">{info['title']}</h3>   <!-- Caption type title -->
+                    <span class="card-icon">{info['icon']}</span>   <!-- Caption type icon -->
+                    <h3 class="card-title">{info['title']}</h3>     <!-- Caption type title -->
                 </div>
-                <div class="card-content">{data.get('caption', '')}</div> <!-- Generated caption text -->
+                <div class="card-content">{data.get('caption', '')}</div>   <!-- Generated caption text -->
             </div>
-            """, unsafe_allow_html=True)                   # Allow HTML rendering
+            """, unsafe_allow_html=True)           # Allow HTML rendering
             
     # Clear Button logic
-    col1, col2, col3 = st.columns([2, 1.5, 2]) # Columns to center the button
+    col1, col2, col3 = st.columns([2, 1.5, 2])     # Columns to center the button
     with col2:
-        st.markdown("<br>", unsafe_allow_html=True) # Spacer
+        st.markdown("<br>", unsafe_allow_html=True)    # Spacer
         if st.button("🗑️ Clear", type="secondary", use_container_width=True):
             # Reset all session states to default
             st.session_state.captions_generated = False       # Reset generation flag
@@ -428,7 +428,7 @@ elif st.session_state.get("api_image"):
 else:
     st.markdown('<div class="empty-output">📷 Upload an image and click "Generate Captions" to see results here.</div>', unsafe_allow_html=True)
 
-st.markdown('</div>', unsafe_allow_html=True) # Close output section
+st.markdown('</div>', unsafe_allow_html=True)   # Close output section
 
 # ===================== FOOTER =====================
 # Renders the footer text
