@@ -13,7 +13,7 @@ from pydantic import BaseModel                # Pydantic for request schema vali
 app = modal.App("image-caption-studio")       # Define the app name
 
 # Create a persistent volume to cache the 15GB model weights
-model_cache = modal.Volume.from_name("hf-hub-cache", create_if_missing=True) # Mount volume
+model_cache = modal.Volume.from_name("hf-hub-cache", create_if_missing=True)   # Mount volume
 CACHE_DIR = "/cache"                          # Define cache path
 
 # ===================== DOCKER IMAGE DEFINITION =====================
@@ -33,11 +33,11 @@ image = (
         "pillow",                             # Image processing
         "torch==2.4.0",                       # PyTorch
         "torchvision==0.19.0",                # Torchvision
-        extra_options="--extra-index-url https://download.pytorch.org/whl/cu121" # CUDA wheel index
+        extra_options="--extra-index-url https://download.pytorch.org/whl/cu121"   # CUDA wheel index
     )
     .env({
         "HF_HUB_CACHE": CACHE_DIR,            # Set HF cache directory
-        "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True" # Prevent OOM fragmentation
+        "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"   # Prevent OOM fragmentation
     })
 )
 
@@ -66,35 +66,36 @@ class CaptionModel:
     
     @modal.enter()
     def load_model(self):
-        import torch                          # Import inside function to save local startup time
+        # Import inside function to save local startup time
+        import torch                          
         from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor, BitsAndBytesConfig
         
-        print("🚀 Loading Qwen2.5-VL-7B-Instruct...") # Log status
-        model_id = "Qwen/Qwen2.5-VL-7B-Instruct" # Model identifier
+        print("🚀 Loading Qwen2.5-VL-7B-Instruct...")   # Log status
+        model_id = "Qwen/Qwen2.5-VL-7B-Instruct"        # Model identifier
         
         # 4-bit quantization configuration to fit the 7B model on the A10G GPU
         quantization_config = BitsAndBytesConfig(
             load_in_4bit=True,                # Enable 4-bit quantization
-            bnb_4bit_compute_dtype=torch.float16, # Compute in FP16
-            bnb_4bit_quant_type="nf4",        # NF4 quantization type
+            bnb_4bit_compute_dtype=torch.float16,   # Compute in FP16
+            bnb_4bit_quant_type="nf4",         # NF4 quantization type
             bnb_4bit_use_double_quant=True,   # Double quantization
         )
         
         self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
             model_id,                         # Load model
-            quantization_config=quantization_config, # Apply 4-bit config
-            device_map="auto",                # Auto-device placement
+            quantization_config=quantization_config,   # Apply 4-bit config
+            device_map="auto",                 # Auto-device placement
             trust_remote_code=True            # Allow custom code
         )
         
         # Load processor with a max pixel constraint to prevent OOM errors
         self.processor = AutoProcessor.from_pretrained(
-            model_id,                         # Model identifier
+            model_id,                          # Model identifier
             use_fast=False,                   # Use slow processor
             trust_remote_code=True,           # Allow custom code
             max_pixels=2048 * 28 * 28         # Limit image resolution
         )
-        print("✅ Model loaded successfully!") # Log success
+        print("✅ Model loaded successfully!")   # Log success
 
     # -------------------- API ENDPOINT DEFINITION --------------------
     # Defines the FastAPI app and routes
@@ -119,8 +120,8 @@ class CaptionModel:
         async def generate(req: CaptionRequest):
             try:
                 # Decode the base64 image string into a PIL Image
-                image_data = base64.b64decode(req.image) # Decode base64
-                pil_image = Image.open(BytesIO(image_data)).convert("RGB") # Open as RGB
+                image_data = base64.b64decode(req.image)   # Decode base64
+                pil_image = Image.open(BytesIO(image_data)).convert("RGB")   # Open as RGB
 
                 # Determine which caption types to generate
                 caption_types = ['short', 'technical', 'human-friendly'] if 'all' in req.styles else req.styles
@@ -130,38 +131,38 @@ class CaptionModel:
                 # Handles the model inference for a given set of prompts
                 def run_generation(system_msg, user_msg, max_tokens, temperature):
                     messages = [              # Build chat messages
-                        {"role": "system", "content": system_msg}, # System prompt
-                        {"role": "user", "content": [              # User prompt
-                            {"type": "image", "image": pil_image}, # Attach image
-                            {"type": "text", "text": user_msg}     # Attach text prompt
+                        {"role": "system", "content": system_msg},   # System prompt
+                        {"role": "user", "content": [                # User prompt
+                            {"type": "image", "image": pil_image},   # Attach image
+                            {"type": "text", "text": user_msg}       # Attach text prompt
                         ]}
                     ]
                     
                     # Prepare inputs for the model
-                    text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True) # Format prompt
-                    image_inputs = self.processor(text=text, images=pil_image, return_tensors="pt") # Process image and text
-                    image_inputs = {k: v.to(self.model.device) for k, v in image_inputs.items()} # Move to GPU
+                    text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)   # Format prompt
+                    image_inputs = self.processor(text=text, images=pil_image, return_tensors="pt")   # Process image and text
+                    image_inputs = {k: v.to(self.model.device) for k, v in image_inputs.items()}   # Move to GPU
 
                     # Generate text
                     with torch.no_grad():     # Disable gradient calculation
                         generated_ids = self.model.generate(
                             **image_inputs,   # Inputs
-                            max_new_tokens=max_tokens, # Max tokens to generate
+                            max_new_tokens=max_tokens,   # Max tokens to generate
                             do_sample=True,   # Enable sampling
-                            temperature=temperature, # Creativity level
+                            temperature=temperature,   # Creativity level
                             top_p=0.9,        # Nucleus sampling
-                            repetition_penalty=1.1 # Prevent repetition
+                            repetition_penalty=1.1   # Prevent repetition
                         )
 
                     # Decode output and strip quotes
                     generated_ids_trimmed = [
-                        out_ids[len(in_ids):] for in_ids, out_ids in zip(image_inputs["input_ids"], generated_ids) # Remove prompt tokens
+                        out_ids[len(in_ids):] for in_ids, out_ids in zip(image_inputs["input_ids"], generated_ids)   # Remove prompt tokens
                     ]
                     caption = self.processor.batch_decode(
                         generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=True
                     )[0].strip()              # Decode to string
                     
-                    return caption.strip('"').strip("'").strip() # Strip quotes
+                    return caption.strip('"').strip("'").strip()   # Strip quotes
 
                 # -------------------- MAIN GENERATION LOOP --------------------
                 # Iterates through requested styles and applies 3-pass logic
@@ -169,8 +170,8 @@ class CaptionModel:
                     if caption_type not in caption_types:
                         continue              # Skip unrequested styles
                     
-                    target = req.word_limits.get(caption_type, 25) # Target word count
-                    min_words = max(5, target - 3) # Minimum allowed
+                    target = req.word_limits.get(caption_type, 25)   # Target word count
+                    min_words = max(5, target - 3)   # Minimum allowed
                     max_words = target + 3    # Maximum allowed
 
                     # === PASS 1: Initial Generation ===
@@ -189,8 +190,8 @@ class CaptionModel:
                         user_msg = f"Create a friendly, engaging caption for this image in approximately {target} words. Do NOT use emojis or hashtags. Output only the caption."
                         temp = 0.7            # High temp for creativity
 
-                    caption = run_generation(system_msg, user_msg, max_tokens=250, temperature=temp) # Generate
-                    word_count = len(caption.split()) # Count generated words
+                    caption = run_generation(system_msg, user_msg, max_tokens=250, temperature=temp)   # Generate
+                    word_count = len(caption.split())   # Count generated words
 
                     # === PASS 2: Strict Self-Correction ===
                     # If the word count is outside the buffer, prompt the model to fix it
@@ -203,17 +204,19 @@ class CaptionModel:
                             instruction = f"Your caption was too short ({word_count} words). You must rewrite it to be approximately {target} words, adding more descriptive detail."
 
                         correction_system = "You are an expert editor with absolute control over word count. Follow the length constraint perfectly. Do NOT use emojis or hashtags."
-                        correction_user = f"""Here is a caption: "{caption}"
-{instruction}
-Output only the revised caption. Do not explain your reasoning."""
+                        correction_user = (
+                            f'Here is a caption: "{caption}"\n'
+                            f'{instruction}\n'
+                            'Output only the revised caption. Do not explain your reasoning.'
+                        )
 
-                        revised_caption = run_generation(correction_system, correction_user, max_tokens=250, temperature=0.3) # Generate correction
-                        revised_word_count = len(revised_caption.split()) # Count corrected words
+                        revised_caption = run_generation(correction_system, correction_user, max_tokens=250, temperature=0.3)  # Generate correction
+                        revised_word_count = len(revised_caption.split())   # Count corrected words
                         
                         # Only accept the revision if it's closer to the target
                         if abs(revised_word_count - target) < abs(word_count - target):
-                            caption = revised_caption # Accept revision
-                            word_count = revised_word_count # Update count
+                            caption = revised_caption    # Accept revision
+                            word_count = revised_word_count    # Update count
                             print(f"✅ Pass 2 improved to {word_count} words.")
 
                     # === PASS 3: Final Polish ===
@@ -226,42 +229,42 @@ Output only the revised caption. Do not explain your reasoning."""
                             final_system = "You are a descriptive writer. Add more vivid details."
                             final_user = f"Rewrite this caption to be closer to {target} words. Add adjectives and adverbs: \"{caption}\""
                             
-                        polished_caption = run_generation(final_system, final_user, max_tokens=250, temperature=0.4) # Generate polish
-                        polished_word_count = len(polished_caption.split()) # Count polished words
+                        polished_caption = run_generation(final_system, final_user, max_tokens=250, temperature=0.4)   # Generate polish
+                        polished_word_count = len(polished_caption.split())   # Count polished words
                         
                         if abs(polished_word_count - target) < abs(word_count - target):
-                            caption = polished_caption # Accept polish
-                            word_count = polished_word_count # Update count
+                            caption = polished_caption   # Accept polish
+                            word_count = polished_word_count   # Update count
                             print(f"✅ Pass 3 improved to {word_count} words.")
 
                     # -------------------- TEXT CLEANUP & REGEX --------------------
                     # Removes hashtags and non-ASCII characters (emojis)
-                    caption = re.sub(r'#\w+', '', caption) # Remove hashtags
-                    caption = ''.join(c for c in caption if c.isascii()) # Remove emojis
-                    caption = ' '.join(caption.split())    # Normalize spaces
+                    caption = re.sub(r'#\w+', '', caption)   # Remove hashtags
+                    caption = ''.join(c for c in caption if c.isascii())   # Remove emojis
+                    caption = ' '.join(caption.split())     # Normalize spaces
                     word_count = len(caption.split())      # Recalculate word count
 
                     # Hard truncation if the model completely ignores the limit
                     if word_count > max_words:
-                        words = caption.split()            # Split into words
-                        trimmed_words = words[:max_words]  # Take only max allowed words
-                        trimmed_text = ' '.join(trimmed_words) # Rejoin
+                        words = caption.split()             # Split into words
+                        trimmed_words = words[:max_words]   # Take only max allowed words
+                        trimmed_text = ' '.join(trimmed_words)   # Rejoin
                         
                         # Cut at the last punctuation mark for a clean ending
                         last_punct = max(trimmed_text.rfind('.'), trimmed_text.rfind('!'), trimmed_text.rfind('?'))
                         
                         if last_punct > 0:
-                            caption = trimmed_text[:last_punct+1] # Keep up to punctuation
+                            caption = trimmed_text[:last_punct+1]   # Keep up to punctuation
                         else:
                             caption = trimmed_text + '.'      # Add period if none found
                             
-                        word_count = len(caption.split())  # Final count
+                        word_count = len(caption.split())    # Final count
                         print(f"🔨 Hard truncated {caption_type} to {word_count} words.")
 
                     # Remove dangling conjunctions (e.g., "and." or "or.")
-                    caption = re.sub(r'\s+(and|or|but|with|in|on|at|to|by|of)\.?$', '.', caption, flags=re.IGNORECASE) # Regex cleanup
-                    caption = re.sub(r'\s+\.', '.', caption) # Clean up spaces before period
-                    word_count = len(caption.split())        # Final count
+                    caption = re.sub(r'\s+(and|or|but|with|in|on|at|to|by|of)\.?$', '.', caption, flags=re.IGNORECASE)   # Regex cleanup
+                    caption = re.sub(r'\s+\.', '.', caption)   # Clean up spaces before period
+                    word_count = len(caption.split())         # Final count
                     
                     # Store finalized result
                     results[caption_type] = {
@@ -274,11 +277,11 @@ Output only the revised caption. Do not explain your reasoning."""
                     if torch.cuda.is_available():
                         torch.cuda.empty_cache()             # Empty cache
 
-                return {"success": True, "captions": results} # Return success JSON
+                return {"success": True, "captions": results}   # Return success JSON
 
             except Exception as e:                    # Catch errors
                 import traceback                      # Import traceback
                 traceback.print_exc()                 # Log error
-                return {"success": False, "error": str(e)} # Return error JSON
+                return {"success": False, "error": str(e)}   # Return error JSON
 
         return api                                # Return FastAPI app
