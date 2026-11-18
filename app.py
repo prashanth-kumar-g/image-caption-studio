@@ -12,7 +12,12 @@ st.set_page_config(
 )
 
 # ---------------- CONFIGURATION ----------------
-MODAL_API_URL = "https://prashanth-kumar-g--image-caption-studio-captionmodel-web.us-east.modal.run" 
+try:
+    MODAL_API_URL = st.secrets["MODAL_API_URL"]
+except (FileNotFoundError, KeyError):
+    # This runs ONLY if secrets.toml is missing
+    MODAL_API_URL = "https://your-modal-url-here.modal.run"
+    st.warning("⚠️ Developer Note: `MODAL_API_URL` secret is not configured. The backend will not respond.")
 
 # ---------------- CSS (EXACT ORIGINAL - UNCHANGED) ----------------
 st.markdown("""
