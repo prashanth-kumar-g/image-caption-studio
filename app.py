@@ -189,6 +189,33 @@ body {
   border: 2px dashed #30363d;                 /* Dashed border */
 }
 
+/* ===================== LIGHT THEME OVERRIDES ===================== */
+/* Fixes the dark background issue for these specific elements when Light Mode is active */
+
+/* Targets OS-level light mode preference */
+@media (prefers-color-scheme: light) {
+    .image-box-container {
+        background-color: #ffffff !important;   /* White background for light theme */
+        border: 2px dashed #d1d5db !important;  /* Light gray border */
+    }
+    .empty-output {
+        background-color: #ffffff !important;   /* White background for light theme */
+        border: 2px dashed #d1d5db !important;  /* Light gray border */
+        color: #4b5563 !important;              /* Dark gray text for readability */
+    }
+}
+
+/* Targets Streamlit's manual in-app theme toggle */
+[data-theme="light"] .image-box-container {
+    background-color: #ffffff !important;       /* White background for light theme */
+    border: 2px dashed #d1d5db !important;      /* Light gray border */
+}
+[data-theme="light"] .empty-output {
+    background-color: #ffffff !important;       /* White background for light theme */
+    border: 2px dashed #d1d5db !important;      /* Light gray border */
+    color: #4b5563 !important;                  /* Dark gray text for readability */
+}
+
 /* ===================== FOOTER STYLING ===================== */
 /* Styling for the copyright text at the bottom */
 .footer {
