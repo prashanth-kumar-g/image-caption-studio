@@ -6,6 +6,7 @@ from PIL import Image                         # Image processing library
 import base64                                 # For encoding images to base64
 from io import BytesIO                        # For handling in-memory bytes
 import requests                               # For making HTTP requests to the backend
+import streamlit.components.v1 as components  # For injecting the small theme-detector script
 
 # ===================== PAGE CONFIGURATION =====================
 # Sets the browser tab title, icon, and layout width
@@ -189,31 +190,87 @@ body {
   border: 2px dashed #30363d;                 /* Dashed border */
 }
 
-/* ===================== LIGHT THEME OVERRIDES ===================== */
-/* Fixes the dark background issue for these specific elements when Light Mode is active */
+/* ===================== LIGHT THEME OVERRIDES (FIXED) ===================== */
+/* Uses high-specificity selectors to force white backgrounds in light mode */
 
-/* Targets OS-level light mode preference */
+/* Target OS-level light mode */
 @media (prefers-color-scheme: light) {
     .image-box-container {
-        background-color: #ffffff !important;   /* White background for light theme */
+        background-color: #ffffff !important;   /* White background */
         border: 2px dashed #d1d5db !important;  /* Light gray border */
     }
+    .image-placeholder {
+        color: #4b5563 !important;              /* Dark text for visibility */
+    }
     .empty-output {
-        background-color: #ffffff !important;   /* White background for light theme */
+        background-color: #ffffff !important;   /* White background */
         border: 2px dashed #d1d5db !important;  /* Light gray border */
-        color: #4b5563 !important;              /* Dark gray text for readability */
+        color: #4b5563 !important;              /* Dark text */
     }
 }
 
-/* Targets Streamlit's manual in-app theme toggle */
-[data-theme="light"] .image-box-container {
-    background-color: #ffffff !important;       /* White background for light theme */
-    border: 2px dashed #d1d5db !important;      /* Light gray border */
-}
+/* Target Streamlit's manual theme class on the root element */
+html[data-theme="light"] .image-box-container,
+html[data-theme="light"] .empty-output,
+[data-theme="light"] .image-box-container,
 [data-theme="light"] .empty-output {
-    background-color: #ffffff !important;       /* White background for light theme */
-    border: 2px dashed #d1d5db !important;      /* Light gray border */
-    color: #4b5563 !important;                  /* Dark gray text for readability */
+    background-color: #ffffff !important;
+    border: 2px dashed #d1d5db !important;
+}
+html[data-theme="light"] .image-placeholder,
+html[data-theme="light"] .empty-output,
+[data-theme="light"] .image-placeholder,
+[data-theme="light"] .empty-output {
+    color: #4b5563 !important;
+}
+
+/* Target Streamlit's core view containers to ensure cascade override */
+[data-testid="stAppViewContainer"][data-theme="light"] .image-box-container,
+[data-testid="stAppViewContainer"][data-theme="light"] .empty-output,
+.stApp[data-theme="light"] .image-box-container,
+.stApp[data-theme="light"] .empty-output {
+    background-color: #ffffff !important;
+    border: 2px dashed #d1d5db !important;
+}
+[data-testid="stAppViewContainer"][data-theme="light"] .image-placeholder,
+[data-testid="stAppViewContainer"][data-theme="light"] .empty-output,
+.stApp[data-theme="light"] .image-placeholder,
+.stApp[data-theme="light"] .empty-output {
+    color: #4b5563 !important;
+}
+
+/* ===================== LIGHT THEME OUTPUT OVERRIDES ===================== */
+/* Makes the generated captions title and cards readable when the light theme is selected */
+
+/* Title above the generated captions */
+html[data-theme="light"] .output-title {
+    color: #1f2937 !important;                /* Dark text instead of white */
+}
+
+/* Caption cards */
+html[data-theme="light"] .output-card {
+    background: #ffffff !important;           /* White background instead of dark gradient */
+}
+
+/* Title and text inside each card */
+html[data-theme="light"] .card-title {
+    color: #1f2937 !important;                /* Dark title text instead of white */
+}
+html[data-theme="light"] .card-content {
+    color: #374151 !important;                /* Dark caption text instead of light gray */
+}
+
+/* ===================== LIGHT THEME HEADER/FOOTER OVERRIDES ===================== */
+/* Makes the subtitle and footer text dark when the light theme is selected */
+
+/* Subtitle below the main title */
+html[data-theme="light"] .header p {
+    color: #4b5563 !important;                /* Same color as the "No image selected" text */
+}
+
+/* Copyright text at the bottom */
+html[data-theme="light"] .footer {
+    color: #4b5563 !important;                /* Same color as the "No image selected" text */
 }
 
 /* ===================== FOOTER STYLING ===================== */
@@ -232,8 +289,49 @@ body {
     padding-top: 0rem !important;             /* Removes top padding */
     padding-bottom: 1rem !important;          /* Reduces bottom padding */
 }
+
+/* ===================== THEME DETECTOR (HIDDEN) ===================== */
+/* Removes the invisible theme-detector script frame from the page flow so it adds no extra gap */
+div[data-testid="stElementContainer"][height="0px"]:has(> [data-testid="stIFrame"]) {
+    position: absolute !important;            /* Takes it out of the layout flow */
+    width: 0 !important;                      /* No visible width */
+    height: 0 !important;                     /* No visible height */
+    overflow: hidden !important;              /* Clips anything inside */
+}
 </style>
 """, unsafe_allow_html=True)
+
+# ===================== THEME DETECTOR (LIGHT/DARK SYNC) =====================
+# Streamlit does not expose its active theme to CSS (no data-theme attribute, and
+# prefers-color-scheme only follows the OS, not the Settings menu choice).
+# This tiny script reads the real app background color and tags <html> with
+# data-theme="light" or "dark", which activates the LIGHT THEME OVERRIDES above.
+
+components.html("""
+<script>
+(function () {
+    try {
+        var parentDoc = window.parent.document;                   // Streamlit page (same-origin iframe)
+        var parentWin = window.parent;                            // Streamlit window (for computed styles)
+
+        function syncTheme() {
+            var app = parentDoc.querySelector('.stApp');          // Root element that carries the theme background
+            if (!app) { return; }                                 // App not rendered yet, try again later
+            var rgb = parentWin.getComputedStyle(app).backgroundColor.match(/[0-9.]+/g);   // Read [r, g, b]
+            if (!rgb) { return; }                                 // Unreadable color, keep current state
+            var brightness = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255;     // Perceived brightness (0 to 1)
+            var theme = brightness < 0.5 ? 'dark' : 'light';      // Dark background means dark theme
+            if (parentDoc.documentElement.getAttribute('data-theme') !== theme) {
+                parentDoc.documentElement.setAttribute('data-theme', theme);   // Tag <html> so the CSS can react
+            }
+        }
+
+        syncTheme();                                              // Apply immediately on load
+        setInterval(syncTheme, 300);                              // Re-check so Settings menu changes are picked up live
+    } catch (e) { /* Parent not accessible (e.g. restricted embed): keep default dark styling */ }
+})();
+</script>
+""", height=0)
 
 # ===================== HEADER RENDER =====================
 # Injects the HTML for the main application header
